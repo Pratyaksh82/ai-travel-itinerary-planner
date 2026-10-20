@@ -1,8 +1,9 @@
+from __future__ import annotations
 import json
 import uuid
 import datetime
 import httpx
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from app.config import settings
 from app.models.schemas import (
     TripGenerateRequest,

@@ -25,9 +25,28 @@ app.add_middleware(
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 # Optional Static Frontend mount if built
-FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
-if FRONTEND_DIST.exists():
-    app.mount("/", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend")
+CANDIDATE_PATHS = [
+    Path(__file__).resolve().parent.parent.parent / "frontend" / "dist",
+    Path(__file__).resolve().parent.parent / "frontend" / "dist",
+    Path.cwd() / "frontend" / "dist",
+]
+FRONTEND_DIST = next((p for p in CANDIDATE_PATHS if p.exists() and (p / "index.html").exists()), None)
+
+if FRONTEND_DIST:
+    try:
+        app.mount("/", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend")
+    except Exception as e:
+        print(f"Warning: StaticFiles mount skipped ({e}). Serving API endpoints.")
+        @app.get("/")
+        async def root_info():
+            return {
+                "app": settings.PROJECT_NAME,
+                "version": settings.VERSION,
+                "status": "online",
+                "docs_url": "/docs",
+                "api_health": "/api/health",
+                "scenarios_url": "/api/scenarios"
+            }
 else:
     @app.get("/")
     async def root_info():
@@ -39,3 +58,4 @@ else:
             "api_health": "/api/health",
             "scenarios_url": "/api/scenarios"
         }
+
